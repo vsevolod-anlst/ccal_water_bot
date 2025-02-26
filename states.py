@@ -5,4 +5,4 @@ class Profile(StatesGroup):
     name = State()
     age = State()
     weight = State()
-    #city = State()
+    city = State()
