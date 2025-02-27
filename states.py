@@ -6,3 +6,5 @@ class Profile(StatesGroup):
     age = State()
     weight = State()
     city = State()
+    cnt_active_min_for_day = State()
+    target = State()
