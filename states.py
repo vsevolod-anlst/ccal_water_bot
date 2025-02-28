@@ -8,3 +8,4 @@ class Profile(StatesGroup):
     city = State()
     cnt_active_min_for_day = State()
     target = State()
+    confirm_target = State()
