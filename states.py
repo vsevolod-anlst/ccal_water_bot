@@ -10,3 +10,4 @@ class Profile(StatesGroup):
     cnt_active_min_for_day = State()
     target = State()
     confirm_target = State()
+    confirm_delete = State()

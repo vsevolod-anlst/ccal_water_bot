@@ -49,6 +49,17 @@ keyboard_yes_no = ReplyKeyboardMarkup(
 )
 
 
+kb_yes_no_delete = [
+    [KeyboardButton(text="Да")],
+    [KeyboardButton(text="Нет")]
+]
+keyboard_yes_no_delete = ReplyKeyboardMarkup(
+    keyboard=kb_yes_no_delete,
+    resize_keyboard=True,
+    input_field_placeholder="Если нажмете да - будут удалены все данные о вас"
+)
+
+
 def check_string(text):
     return bool(re.match(r'^[A-Za-zА-Яа-яЁё-]+$', text))
 
@@ -128,8 +139,6 @@ async def process_age(message: Message, state: FSMContext):
         await message.answer("Введите ваш вес в килограммах")
         await state.set_state(Profile.weight)
 
-        await process_invalid_age(message, state)
-
 
 @router1.message(Profile.age)
 async def process_invalid_age(message: Message, state: FSMContext):
@@ -141,14 +150,11 @@ async def process_weight(message: Message, state: FSMContext):
     selected_weight = float(message.text)
 
     if selected_weight < 0:
-        await message.reply("Вес не может быть отрицательным")
-        await message.answer("Введите ваш вес в килограммах в диапазоне [30, 200]")
+        await process_invalid_value(message, ("Вес не может быть отрицательным\n\nВведите ваш вес в килограммах в диапазоне [30, 200]"))
     elif 0 <= selected_weight < 30:
-        await message.reply("Вы живы вообще?\nРекомендую обратиться к специалисту")
-        await message.answer("Введите ваш вес в килограммах в диапазоне [30, 200]]")
+        await process_invalid_value(message, ("Вы живы вообще?\nРекомендую обратиться к специалисту\n\nВведите ваш вес в килограммах в диапазоне [30, 200]"))
     elif selected_weight > 200:
-        await message.reply("Хорошего человека конечно должно быть много, но...\nОбратитесь к специалисту")
-        await message.answer("Введите ваш вес в килограммах в диапазоне [30, 200]")
+        await process_invalid_value(message, ("Хорошего человека конечно должно быть много, но...\nОбратитесь к специалисту\n\nВведите ваш вес в килограммах в диапазоне [30, 200]"))
     else:
         await state.update_data(weight=selected_weight)
         await message.answer("Введите ваш рост в сантиметрах")
@@ -165,14 +171,11 @@ async def process_height(message: Message, state: FSMContext):
     selected_height = float(message.text)
 
     if selected_height < 0:
-        await message.reply("Рост не может быть отрицательным")
-        await message.answer("Введите ваш рост в сантиметрах в диапазоне [55, 251]")
+        await process_invalid_value(message, ("Рост не может быть отрицательным\n\nВведите ваш рост в сантиметрах в диапазоне [55, 251]"))
     elif 0 <= selected_height < 55:
-        await message.reply("Самый низкий взрослый(18+) человек в мире имеет рост 55 см\nКто ты, воин?")
-        await message.answer("Введите ваш рост в сантиметрах в диапазоне [55, 251]")
+        await process_invalid_value(message, ("Самый низкий взрослый(18+) человек в мире имеет рост 55 см\nКто ты, воин?\n\nВведите ваш рост в сантиметрах в диапазоне [55, 251]"))
     elif selected_height > 251:
-        await message.reply("Самый высокий взрослый(18+) человек в мире имеет рост 251 см\nСупермутант обнаружен, зеленый уровень угрозы")
-        await message.answer("Введите ваш рост в сантиметрах в диапазоне [55, 251]")
+        await process_invalid_value(message, ("Самый высокий взрослый(18+) человек в мире имеет рост 251 см\nСупермутант обнаружен, зеленый уровень угрозы!\n\nВведите ваш рост в сантиметрах в диапазоне [55, 251]"))
     else:
         await state.update_data(height=selected_height)
         await message.answer("Введите ваш город проживания")
@@ -207,30 +210,22 @@ async def handle_invalid_city(message: Message, error_msg=None):
     await message.reply("Пожалуйста, введите корректное название города без спец символов и цифр.")
 
 
-def strike(text="Сказочник"):
-    result = ''
-    for char in text:
-        result += char + '\u0336'
-    return result
-
-
 @router1.message(Profile.cnt_active_min_for_day, F.text.regexp(r'^\d+(\.\d+)?$'))
 async def process_cnt_active_min_for_day(message: Message, state: FSMContext):
     selected_cnt_active_min_for_day = float(message.text)
     if selected_cnt_active_min_for_day < 0:
-        await message.reply("Количество минут активности не может быть отрицательным")
+        await process_invalid_value(message, ("Количество минут активности не может быть отрицательным\n\nВведите количество минут вашей активности в день в диапазоне [0, 3000]"))
     elif selected_cnt_active_min_for_day > 3000:
-        name_vrun = strike()
-        await message.reply(f"В сутках 3600 минут, из них при такой нагрузке надо спать хотя бы 600 минут, {name_vrun}")
+        await process_invalid_value(message, ("В сутках 3600 минут, из них при такой нагрузке надо спать хотя бы 600 минут\n\nВведите количество минут вашей активности в день в диапазоне [0, 3000]"))
     else:
         await state.update_data(cnt_active_min_for_day=selected_cnt_active_min_for_day)
-        await message.answer("Изначально установленная цель - похудетьХотите ли вы изменить эту цель?", reply_markup=keyboard_yes_no)
+        await message.answer("Изначально установленная цель - похудеть\nХотите ли вы изменить эту цель?", reply_markup=keyboard_yes_no)
         await state.set_state(Profile.confirm_target)
 
 
 @router1.message(Profile.cnt_active_min_for_day)
 async def process_invalid_cnt_active_min_for_day(message: Message, state: FSMContext):
-    await message.reply("Пожалуйста, введите положительное число для количества минут вашей активности в день в виде числа в диапазоне [0, 3000]")
+    await message.reply("Пожалуйста, введите положительное число количества минут вашей активности в день в виде числа в диапазоне [0, 3000]")
 
 
 @router1.message(Profile.confirm_target, F.text == "Да")
@@ -265,9 +260,7 @@ async def keep_target(message: Message, state: FSMContext):
     await state.clear()
 
 
-@router1.message(Profile.target,
-                F.text.in_(available_target)
-                )
+@router1.message(Profile.target, F.text.in_(available_target))
 async def process_target(message: Message, state: FSMContext):
     selected_target = message.text
     await state.update_data(target=selected_target)
@@ -292,11 +285,25 @@ async def delete_user_data(user_id):
 
     return "Ваши данные удалены!"
 
+
 @router1.message(Command("delete_profile"))
-async def cmd_delete_profile(message: Message, state: FSMContext):
-    user_id = message.from_user.id
-    result = await delete_user_data(user_id)
-    await message.answer(result)
+async def cmd_confirm_delete_profile(message: Message, state: FSMContext):
+    await message.reply("Вы уверены, что хотите удалить ваш профиль? Нажмите 'Да' или 'Нет'", reply_markup=keyboard_yes_no_delete)
+    await state.set_state(Profile.confirm_delete)
+
+
+@router1.message(Profile.confirm_delete)
+async def process_delete_profile(message: Message, state: FSMContext):
+    if message.text.lower() == "да":
+        user_id = message.from_user.id
+        result = await delete_user_data(user_id)
+        await message.answer(result, reply_markup=ReplyKeyboardRemove())
+        await state.clear()
+    elif message.text.lower() == "нет":
+        await message.answer("Ваши данные не удалены", reply_markup=ReplyKeyboardRemove())
+        await state.clear()
+    else:
+        await message.answer("Пожалуйста, нажмите 'Да' или 'Нет'", reply_markup=keyboard_yes_no_delete)
 
 
 @router1.message()
