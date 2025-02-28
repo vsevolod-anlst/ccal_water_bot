@@ -5,6 +5,7 @@ class Profile(StatesGroup):
     name = State()
     age = State()
     weight = State()
+    height = State()
     city = State()
     cnt_active_min_for_day = State()
     target = State()
