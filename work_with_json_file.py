@@ -56,7 +56,28 @@ async def load_user_data_details(user_id):
         cnt_active_min_for_day = user_data.get("cnt_active_min_for_day")
         target = user_data.get("target")
 
+
         return sex, name, age, weight, height, city, cnt_active_min_for_day, target
+    else:
+        return user_data
+
+
+async def load_user_data_ccal_and_water(user_id):
+    user_data = await get_user_data(user_id)
+
+    if isinstance(user_data, dict):
+        sex = user_data.get("sex")
+        name = user_data.get("name")
+        age = user_data.get("age")
+        weight = user_data.get("weight")
+        height = user_data.get("height")
+        city = user_data.get("city")
+        cnt_active_min_for_day = user_data.get("cnt_active_min_for_day")
+        target = user_data.get("target")
+        calculation_calorie = user_data.get("calculation_calorie")
+        calculation_water_without_weather = user_data.get("calculation_water_without_weather")
+
+        return sex, name, age, weight, height, city, cnt_active_min_for_day, target, calculation_calorie, calculation_water_without_weather
     else:
         return user_data
 
@@ -75,7 +96,6 @@ async def delete_user_data(user_id, file_path='user_data.json'):
 
         if str(user_id) in data:
             del data[str(user_id)]
-            print(f"Пользователь {user_id} удален.")
 
             async with aiofiles.open(file_path, mode='w', encoding='utf-8') as file:
                 await file.write(json.dumps(data, ensure_ascii=False, indent=4))

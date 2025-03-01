@@ -8,7 +8,8 @@ import aiofiles
 
 from states import Profile
 from get_weather import get_temp
-from work_with_json_file import save_user_data, load_user_data_details, delete_user_data
+from work_with_json_file import save_user_data, load_user_data_ccal_and_water, delete_user_data
+from calculation_calorie_and_water_allowance import calculation_calorie_without_weather, calculation_water_without_weather
 
 
 router1 = Router()
@@ -71,20 +72,20 @@ def check_string(text):
 async def cmd_help(message: Message):
     await message.reply(
         "Команды:\n"
-        "/set_profile - Начало работы и создание вашего личного профиля или поиск существующего\n"
+        "/profile - Начало работы и создание вашего личного профиля или поиск существующего\n"
         "/delete_profile - Удалить ваш профиль"
     )
 # РАБОТА С ФАЙЛОМ
-@router1.message(Command("set_profile"))
+@router1.message(Command("profile"))
 async def cmd_set_profile(message: Message, state: FSMContext):
     user_id = str(message.from_user.id)
 
-    result = await load_user_data_details(user_id)
+    result = await load_user_data_ccal_and_water(user_id)
 
     if isinstance(result, tuple):
-        sex, name, age, weight, height, city, cnt_active_min_for_day, target = await load_user_data_details(user_id)
+        sex, name, age, weight, height, city, cnt_active_min_for_day, target, calculation_calorie, calculation_water_without_weather = await load_user_data_ccal_and_water(user_id)
         user_data_str = (f"Пол: {sex}\nИмя: {name}\nВозраст: {age}\nВес: {weight}\n"
-                         f"Рост: {height}\nГород: {city}\nАктивность: {cnt_active_min_for_day} минут в день\nЦель: {target}")
+                         f"Рост: {height}\nГород: {city}\nАктивность: {cnt_active_min_for_day} минут в день\nЦель: {target}\nНеобходимое количество калорий на день: {calculation_calorie}\nНеобходимое количество воды при условии нормальной (<25°C) температуры: {calculation_water_without_weather}")
         await message.answer(f"Заходи не бойся, уходи не плачь, {name}\nВаши сохраненные данные:\n\n{user_data_str}")
     else:
         await message.answer("Пожалуйста, введите ваше имя:")
@@ -242,8 +243,19 @@ async def save_user_and_notify(message: Message, state: FSMContext):
     user_id = message.from_user.id
 
     await save_user_data(user_id, user_data)
-    await message.answer("Ваши данные сохранены!")
     await state.clear()
+
+    calculation_calories = await calculation_calorie_without_weather(user_id)
+    calculation_water = await calculation_water_without_weather(user_id)
+    await delete_user_data(user_id)
+    user_data["calculation_calorie"] = calculation_calories
+    user_data["calculation_water_without_weather"] = calculation_water
+
+
+
+    await save_user_data(user_id, user_data)
+    await message.answer("Ваши данные сохранены!")
+
 
 
 @router1.message(Profile.confirm_target, F.text == "Нет")
