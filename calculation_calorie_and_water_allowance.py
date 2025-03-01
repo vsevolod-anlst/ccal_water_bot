@@ -2,23 +2,13 @@ from get_ccal_for_product import get_food_info
 from handlers import load_user_data
 from fastapi import HTTPException
 
+from work_with_json_file import check_user_data
 
-async def check_user_data(user_id):
-    data = await load_user_data(user_id)
 
-    if data:
-        weight = data.get("sex")
-        age = data.get("sex")
-        sex = data.get("sex")
-        sex = data.get("sex")
-        sex = data.get("sex")
-        sex = data.get("sex")
 
-        return '\n'.join([f"{key}: {value}" for key, value in data.items()])
-    else:
-        raise HTTPException(status_code=404, detail="User data not found")
     # в роутре 2 дописать что если 404 то показать комадну set профиль и попросить заполнить данные
 
+# РАБОТА С ДАННЫМИ ИЗ ФАЙЛА
 async def calculation_calorie_without_weather(user_id):
     try:
         data = await check_user_data(user_id)
@@ -46,8 +36,4 @@ async def calculation_water_without_weather(user_id):
 
 
 
-
-    user_data = {
-        "city": data.get("city"),
-    }
 

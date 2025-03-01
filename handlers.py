@@ -8,6 +8,7 @@ import aiofiles
 
 from states import Profile
 from get_weather import get_temp
+from work_with_json_file import save_user_data, load_user_data_details, delete_user_data
 
 
 router1 = Router()
@@ -64,18 +65,7 @@ def check_string(text):
     return bool(re.match(r'^[A-Za-zА-Яа-яЁё-]+$', text))
 
 
-async def save_user_data(user_id, data):
-    async with aiofiles.open('user_data.txt', mode='a') as file:
-        await file.write(f"{user_id}:{data}\n")
 
-
-async def load_user_data(user_id):
-    async with aiofiles.open('user_data.txt', mode='r') as file:
-        async for line in file:
-            uid, data = line.strip().split(':', 1)
-            if uid == str(user_id):
-                return eval(data)
-    return
 
 @router1.message(Command("help"))
 async def cmd_help(message: Message):
@@ -84,15 +74,18 @@ async def cmd_help(message: Message):
         "/set_profile - Начало работы и создание вашего личного профиля или поиск существующего\n"
         "/delete_profile - Удалить ваш профиль"
     )
-
+# РАБОТА С ФАЙЛОМ
 @router1.message(Command("set_profile"))
 async def cmd_set_profile(message: Message, state: FSMContext):
-    user_id = message.from_user.id
-    data = await load_user_data(user_id)
-    if data:
-        user_data_str = '\n'.join([f"{key}: {value}" for key, value in data.items()])
-        await message.answer(f"Заходи не бойся, уходи не плачь, {data['name']}\nВаши сохраненные данные:\n\n{user_data_str}")
-        await state.update_data(**data)
+    user_id = str(message.from_user.id)
+
+    result = await load_user_data_details(user_id)
+
+    if isinstance(result, tuple):
+        sex, name, age, weight, height, city, cnt_active_min_for_day, target = await load_user_data_details(user_id)
+        user_data_str = (f"Пол: {sex}\nИмя: {name}\nВозраст: {age}\nВес: {weight}\n"
+                         f"Рост: {height}\nГород: {city}\nАктивность: {cnt_active_min_for_day} минут в день\nЦель: {target}")
+        await message.answer(f"Заходи не бойся, уходи не плачь, {name}\nВаши сохраненные данные:\n\n{user_data_str}")
     else:
         await message.answer("Пожалуйста, введите ваше имя:")
         await state.set_state(Profile.name)
@@ -233,7 +226,7 @@ async def change_target(message: Message, state: FSMContext):
     await message.answer("Пожалуйста, выберите вашу цель:", reply_markup=keyboard_target)
     await state.set_state(Profile.target)
 
-
+# Работа с ФАЙЛОМ
 async def save_user_and_notify(message: Message, state: FSMContext):
     data = await state.get_data()
     user_data = {
@@ -247,7 +240,8 @@ async def save_user_and_notify(message: Message, state: FSMContext):
         "target": data.get("target")
     }
     user_id = message.from_user.id
-    await save_user_data(user_id, str(user_data))
+
+    await save_user_data(user_id, user_data)
     await message.answer("Ваши данные сохранены!")
     await state.clear()
 
@@ -272,18 +266,6 @@ async def process_target(message: Message, state: FSMContext):
 @router1.message(Profile.target)
 async def invalid_target(message: Message, state: FSMContext):
     await message.reply("Пожалуйста, выберите цель из предложенных вариантов:", reply_markup=keyboard_target)
-
-
-async def delete_user_data(user_id):
-    async with aiofiles.open('user_data.txt', mode='r') as file:
-        lines = await file.readlines()
-
-    async with aiofiles.open('user_data.txt', mode='w') as file:
-        for line in lines:
-            if not line.startswith(f"{user_id}:"):
-                await file.write(line)
-
-    return "Ваши данные удалены!"
 
 
 @router1.message(Command("delete_profile"))
