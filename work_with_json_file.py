@@ -5,7 +5,6 @@ from datetime import datetime
 
 
 from get_weather import get_temp
-from get_ccal_for_product import get_food_info
 
 
 file_path='user_data.json'
@@ -65,11 +64,10 @@ async def load_user_data_details(user_id):
         weight = user_data.get("weight")
         height = user_data.get("height")
         city = user_data.get("city")
-        cnt_active_min_for_day = user_data.get("cnt_active_min_for_day")
         target = user_data.get("target")
 
 
-        return sex, name, age, weight, height, city, cnt_active_min_for_day, target
+        return sex, name, age, weight, height, city, target
     else:
         return user_data
 
@@ -84,12 +82,11 @@ async def load_user_data_ccal_and_water(user_id):
         weight = user_data.get("weight")
         height = user_data.get("height")
         city = user_data.get("city")
-        cnt_active_min_for_day = user_data.get("cnt_active_min_for_day")
         target = user_data.get("target")
         calculation_calorie = user_data.get("calculation_calorie")
         calculation_water_without_weather = user_data.get("calculation_water_without_weather")
 
-        return sex, name, age, weight, height, city, cnt_active_min_for_day, target, calculation_calorie, calculation_water_without_weather
+        return sex, name, age, weight, height, city, target, calculation_calorie, calculation_water_without_weather
     else:
         return user_data
 
@@ -138,10 +135,21 @@ async def log_water(user_id, amount):
         required_water = user_data.get("calculation_water_without_weather", 3300.0)
         user_data["log"][current_date] = {
             "required_water": required_water,
-            "intake_log": [],
             "remaining_water": required_water,
-            "high_temp_detected": False  # Признак жаркого дня
+            "high_temp_detected": False,
+            "intake_log": [],
+            "food_log": [],
+            "total_calories": 0
         }
+    else:
+        if "high_temp_detected" not in user_data["log"][current_date]:
+            user_data["log"][current_date]["high_temp_detected"] = False
+        if "required_water" not in user_data["log"][current_date]:
+            user_data["log"][current_date]["required_water"] = user_data.get("calculation_water_without_weather", 3300.0)
+        if "remaining_water" not in user_data["log"][current_date]:
+            user_data["log"][current_date]["remaining_water"] = user_data["log"][current_date]["required_water"]
+        if "intake_log" not in user_data["log"][current_date]:
+            user_data["log"][current_date]["intake_log"] = []
 
     city_name = user_data.get("city")
     if city_name and not user_data["log"][current_date]["high_temp_detected"]:
@@ -183,6 +191,13 @@ async def log_food(user_id, product_name, food_weight, food_ccal_per_100g):
             "food_log": [],
             "total_calories": 0
         }
+    else:
+        # Если лог за текущую дату есть, проверяем наличие food_log
+        if "food_log" not in user_data["log"][current_date]:
+            user_data["log"][current_date]["food_log"] = []
+        # Также проверяем наличие total_calories
+        if "total_calories" not in user_data["log"][current_date]:
+            user_data["log"][current_date]["total_calories"] = 0
 
     calories = (food_ccal_per_100g / 100) * food_weight
 

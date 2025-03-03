@@ -84,9 +84,9 @@ async def cmd_set_profile(message: Message, state: FSMContext):
     result = await load_user_data_ccal_and_water(user_id)
 
     if isinstance(result, tuple):
-        sex, name, age, weight, height, city, cnt_active_min_for_day, target, calculation_calorie, calculation_water_without_weather = await load_user_data_ccal_and_water(user_id)
+        sex, name, age, weight, height, city, target, calculation_calorie, calculation_water_without_weather = await load_user_data_ccal_and_water(user_id)
         user_data_str = (f"Пол: {sex}\nИмя: {name}\nВозраст: {age}\nВес: {weight}\n"
-                         f"Рост: {height}\nГород: {city}\nАктивность: {cnt_active_min_for_day} минут в день\nЦель: {target}\nНеобходимое количество калорий на день: {calculation_calorie}\nНеобходимое количество воды при условии нормальной (<25°C) температуры: {calculation_water_without_weather}")
+                         f"Рост: {height}\nГород: {city}\nЦель: {target}\nНеобходимое количество калорий на день: {calculation_calorie}\nНеобходимое количество воды при условии нормальной (<25°C) температуры: {calculation_water_without_weather}")
         await message.answer(f"Заходи не бойся, уходи не плачь, {name}\nВаши сохраненные данные:\n\n{user_data_str}")
     else:
         await message.answer("Пожалуйста, введите ваше имя:")
@@ -192,8 +192,9 @@ async def process_city(message: Message, state: FSMContext):
         if isinstance(temp, (int, float)):
             await state.update_data(city=selected_city)
             await message.answer(f"Температура за бортом {temp}°C")
-            await message.answer("Введите примерное количество минут вашей активности в день")
-            await state.set_state(Profile.cnt_active_min_for_day)
+            await message.answer("Изначально установленная цель - похудеть\nХотите ли вы изменить эту цель?",
+                                 reply_markup=keyboard_yes_no)
+            await state.set_state(Profile.confirm_target)
         else:
             await handle_invalid_city(message, temp)
     else:
@@ -204,24 +205,6 @@ async def handle_invalid_city(message: Message, error_msg=None):
     if error_msg:
         await message.reply(f"Ошибка: {error_msg}")
     await message.reply("Пожалуйста, введите корректное название города без спец символов и цифр.")
-
-
-@router1.message(Profile.cnt_active_min_for_day, F.text.regexp(r'^\d+(\.\d+)?$'))
-async def process_cnt_active_min_for_day(message: Message, state: FSMContext):
-    selected_cnt_active_min_for_day = float(message.text)
-    if selected_cnt_active_min_for_day < 0:
-        await process_invalid_value(message, ("Количество минут активности не может быть отрицательным\n\nВведите количество минут вашей активности в день в диапазоне [0, 3000]"))
-    elif selected_cnt_active_min_for_day > 3000:
-        await process_invalid_value(message, ("В сутках 3600 минут, из них при такой нагрузке надо спать хотя бы 600 минут\n\nВведите количество минут вашей активности в день в диапазоне [0, 3000]"))
-    else:
-        await state.update_data(cnt_active_min_for_day=selected_cnt_active_min_for_day)
-        await message.answer("Изначально установленная цель - похудеть\nХотите ли вы изменить эту цель?", reply_markup=keyboard_yes_no)
-        await state.set_state(Profile.confirm_target)
-
-
-@router1.message(Profile.cnt_active_min_for_day)
-async def process_invalid_cnt_active_min_for_day(message: Message, state: FSMContext):
-    await message.reply("Пожалуйста, введите положительное число количества минут вашей активности в день в виде числа в диапазоне [0, 3000]")
 
 
 @router1.message(Profile.confirm_target, F.text == "Да")
@@ -239,7 +222,6 @@ async def save_user_and_notify(message: Message, state: FSMContext):
         "weight": data.get("weight"),
         "height": data.get("height"),
         "city": data.get("city"),
-        "cnt_active_min_for_day": data.get("cnt_active_min_for_day"),
         "target": data.get("target")
     }
     user_id = message.from_user.id
