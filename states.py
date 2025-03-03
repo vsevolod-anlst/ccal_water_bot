@@ -21,3 +21,4 @@ class LogWaterStates(StatesGroup):
 class LogFoodStates(StatesGroup):
     name_food = State()
     food_weight = State()
+    food_ccal = State()

@@ -5,6 +5,7 @@ from datetime import datetime
 
 
 from get_weather import get_temp
+from get_ccal_for_product import get_food_info
 
 
 file_path='user_data.json'
@@ -30,8 +31,11 @@ async def save_user_data(user_id, user_data, file_path='user_data.json'):
 
         async with aiofiles.open(file_path, 'w', encoding='utf-8') as file:
             await file.write(json.dumps(data, ensure_ascii=False, indent=4))
+            print(f"Данные пользователя {user_id} успешно сохранены.")
+            return True
     except (OSError, IOError) as e:
         print(f"Ошибка при работе с файлом {file_path}: {e}")
+        return False
 
 
 async def get_user_data(user_id, file_path='user_data.json'):
@@ -155,6 +159,41 @@ async def log_water(user_id, amount):
     user_data["log"][current_date]["remaining_water"] -= amount
     if user_data["log"][current_date]["remaining_water"] < 0:
         user_data["log"][current_date]["remaining_water"] = 0
+
+    await save_user_data(user_id, user_data)
+    print(f"Данные о воде для пользователя {user_id} успешно сохранены.")
+    return f"Данные о воде для пользователя {user_id} успешно сохранены."
+
+
+async def log_food(user_id, product_name, food_weight, food_ccal_per_100g):
+
+    user_data = await get_user_data(user_id)
+    print("Полученные данные пользователя:", user_data)
+    if not isinstance(user_data, dict):
+        return user_data
+
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_time = datetime.now().strftime("%H:%M")
+
+    if "log" not in user_data:
+        user_data["log"] = {}
+
+    if current_date not in user_data["log"]:
+        user_data["log"][current_date] = {
+            "food_log": [],
+            "total_calories": 0
+        }
+
+    calories = (food_ccal_per_100g / 100) * food_weight
+
+    user_data["log"][current_date]["food_log"].append({
+        "time": current_time,
+        "name": product_name,
+        "weight": food_weight,
+        "calories": calories
+    })
+
+    user_data["log"][current_date]["total_calories"] += calories
 
     await save_user_data(user_id, user_data)
     print(f"Данные о воде для пользователя {user_id} успешно сохранены.")

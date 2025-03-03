@@ -8,4 +8,4 @@ dict_active = {
 
 
 def get_activity_value(activity_name):
-    return dict_active.get(activity_name)#, "Активность не найдена")
+    return dict_active.get(activity_name)
