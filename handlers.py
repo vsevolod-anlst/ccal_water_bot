@@ -3,7 +3,6 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 import re
-import aiofiles
 
 
 from states import Profile
@@ -67,15 +66,16 @@ def check_string(text):
 
 
 
-
 @router1.message(Command("help"))
 async def cmd_help(message: Message):
     await message.reply(
         "Команды:\n"
         "/profile - Начало работы и создание вашего личного профиля или поиск существующего\n"
+        "/log_water - Записать количество выпитой воды\n"
         "/delete_profile - Удалить ваш профиль"
     )
-# РАБОТА С ФАЙЛОМ
+
+
 @router1.message(Command("profile"))
 async def cmd_set_profile(message: Message, state: FSMContext):
     user_id = str(message.from_user.id)
@@ -116,6 +116,7 @@ async def handle_invalid_sex(message: Message, state: FSMContext):
 async def process_invalid_value(message: Message, prompt: str):
     await message.reply(prompt)
 
+
 @router1.message(Profile.age, F.text.isdigit())
 async def process_age(message: Message, state: FSMContext):
     selected_age = int(message.text)
@@ -135,7 +136,7 @@ async def process_age(message: Message, state: FSMContext):
 
 
 @router1.message(Profile.age)
-async def process_invalid_age(message: Message, state: FSMContext):
+async def process_invalid_age(message: Message):
     await message.reply("Пожалуйста, введите корректный возраст в виде числа в диапазоне [18, 100]")
 
 
@@ -227,7 +228,7 @@ async def change_target(message: Message, state: FSMContext):
     await message.answer("Пожалуйста, выберите вашу цель:", reply_markup=keyboard_target)
     await state.set_state(Profile.target)
 
-# Работа с ФАЙЛОМ
+
 async def save_user_and_notify(message: Message, state: FSMContext):
     data = await state.get_data()
     user_data = {
@@ -241,7 +242,6 @@ async def save_user_and_notify(message: Message, state: FSMContext):
         "target": data.get("target")
     }
     user_id = message.from_user.id
-
     await save_user_data(user_id, user_data)
     await state.clear()
 
@@ -250,12 +250,8 @@ async def save_user_and_notify(message: Message, state: FSMContext):
     await delete_user_data(user_id)
     user_data["calculation_calorie"] = calculation_calories
     user_data["calculation_water_without_weather"] = calculation_water
-
-
-
     await save_user_data(user_id, user_data)
     await message.answer("Ваши данные сохранены!")
-
 
 
 @router1.message(Profile.confirm_target, F.text == "Нет")

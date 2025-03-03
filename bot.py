@@ -8,8 +8,9 @@ from handlers_for_product import router2
 
 bot = Bot(token=token)
 dp = Dispatcher()
-dp.include_router(router1)
 dp.include_router(router2)
+dp.include_router(router1)
+
 
 
 async def main():

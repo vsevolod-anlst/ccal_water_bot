@@ -1,8 +1,14 @@
 import json
 import os
 import aiofiles
+from datetime import datetime
+
+
+from get_weather import get_temp
+
 
 file_path='user_data.json'
+
 
 if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='utf-8') as file:
@@ -11,19 +17,21 @@ if not os.path.exists(file_path):
 
 async def save_user_data(user_id, user_data, file_path='user_data.json'):
     data = {}
+    try:
+        if os.path.exists(file_path):
+            async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
+                try:
+                    file_content = await file.read()
+                    data = json.loads(file_content)
+                except json.JSONDecodeError:
+                    data = {}
 
-    if os.path.exists(file_path):
-        async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
-            try:
-                file_content = await file.read()
-                data = json.loads(file_content)
-            except json.JSONDecodeError:
-                data = {}
+        data[user_id] = user_data
 
-    data[user_id] = user_data
-
-    async with aiofiles.open(file_path, 'w', encoding='utf-8') as file:
-        await file.write(json.dumps(data, ensure_ascii=False, indent=4))
+        async with aiofiles.open(file_path, 'w', encoding='utf-8') as file:
+            await file.write(json.dumps(data, ensure_ascii=False, indent=4))
+    except (OSError, IOError) as e:
+        print(f"Ошибка при работе с файлом {file_path}: {e}")
 
 
 async def get_user_data(user_id, file_path='user_data.json'):
@@ -107,3 +115,47 @@ async def delete_user_data(user_id, file_path='user_data.json'):
     except json.JSONDecodeError:
         print("Ошибка чтения JSON!")
         return "Файл поврежден или имеет неверный формат."
+
+
+async def log_water(user_id, amount):
+
+    user_data = await get_user_data(user_id)
+    print("Полученные данные пользователя:", user_data)
+    if not isinstance(user_data, dict):
+        return user_data
+
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_time = datetime.now().strftime("%H:%M")
+
+    if "log" not in user_data:
+        user_data["log"] = {}
+
+    if current_date not in user_data["log"]:
+        required_water = user_data.get("calculation_water_without_weather", 3300.0)
+        user_data["log"][current_date] = {
+            "required_water": required_water,
+            "intake_log": [],
+            "remaining_water": required_water,
+            "high_temp_detected": False  # Признак жаркого дня
+        }
+
+    city_name = user_data.get("city")
+    if city_name and not user_data["log"][current_date]["high_temp_detected"]:
+        temp = await get_temp(city_name)
+        if isinstance(temp, (int, float)) and temp > 25:
+            user_data["log"][current_date]["required_water"] += 500.0
+            user_data["log"][current_date]["remaining_water"] += 500.0
+            user_data["log"][current_date]["high_temp_detected"] = True
+
+    user_data["log"][current_date]["intake_log"].append({
+        "time": current_time,
+        "amount": amount
+    })
+
+    user_data["log"][current_date]["remaining_water"] -= amount
+    if user_data["log"][current_date]["remaining_water"] < 0:
+        user_data["log"][current_date]["remaining_water"] = 0
+
+    await save_user_data(user_id, user_data)
+    print(f"Данные о воде для пользователя {user_id} успешно сохранены.")
+    return f"Данные о воде для пользователя {user_id} успешно сохранены."
