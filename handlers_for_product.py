@@ -42,8 +42,9 @@ async def handle_water_input(message: Message, state: FSMContext):
 
         user_id = str(message.from_user.id)
         await log_water(user_id, input_water)
-        await message.reply(f"Вы выпили {input_water} миллилитров воды в {current_datetime} по Москве. Событие записано")
+        await message.answer(f"Вы выпили {input_water} миллилитров воды в {current_datetime} по Москве. Событие записано")
         await state.clear()
+        await message.reply("Введите /help для вызова всех команд")
 
 
 @router2.message(LogWaterStates.water_volume)
@@ -98,6 +99,7 @@ async def handle_food_weight_input(message: Message, state: FSMContext):
         await state.update_data(food_weight=input_food_weight)
 
         await save_food_log(message, state)
+        await message.answer("Введите /help для вызова всех команд")
 
 
 @router2.message(LogFoodStates.food_weight)

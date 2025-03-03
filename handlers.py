@@ -243,6 +243,7 @@ async def keep_target(message: Message, state: FSMContext):
     await message.answer("Цель сохранена: Похудеть", reply_markup=ReplyKeyboardRemove())
     await save_user_and_notify(message, state)
     await state.clear()
+    await message.reply("Введите /help для вызова всех команд")
 
 
 @router1.message(Profile.target, F.text.in_(available_target))
@@ -252,6 +253,7 @@ async def process_target(message: Message, state: FSMContext):
     await message.answer(f"Цель сохранена: {selected_target}", reply_markup=ReplyKeyboardRemove())
     await save_user_and_notify(message, state)
     await state.clear()
+    await message.reply("Введите /help для вызова всех команд")
 
 
 @router1.message(Profile.target)
@@ -272,9 +274,11 @@ async def process_delete_profile(message: Message, state: FSMContext):
         result = await delete_user_data(user_id)
         await message.answer(result, reply_markup=ReplyKeyboardRemove())
         await state.clear()
+        await message.reply("Введите /help для вызова всех команд")
     elif message.text.lower() == "нет":
         await message.answer("Ваши данные не удалены", reply_markup=ReplyKeyboardRemove())
         await state.clear()
+        await message.reply("Введите /help для вызова всех команд")
     else:
         await message.answer("Пожалуйста, нажмите 'Да' или 'Нет'", reply_markup=keyboard_yes_no_delete)
 
