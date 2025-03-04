@@ -5,8 +5,6 @@ from work_with_json_file import load_user_data_details
 
 
 
-
-# РАБОТА С ДАННЫМИ ИЗ ФАЙЛА
 async def calculation_calorie_without_weather(user_id):
     user_id = str(user_id)
     result = await load_user_data_details(user_id)
@@ -25,6 +23,7 @@ async def calculation_calorie_without_weather(user_id):
         else: calories_with_target = calories_without_active * 0.8
 
         return calories_with_target
+
 
 
 async def calculation_water_without_weather(user_id):

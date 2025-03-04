@@ -4,15 +4,19 @@ import aiofiles
 from datetime import datetime
 
 
+
 from get_weather import get_temp
+
 
 
 file_path='user_data.json'
 
 
+
 if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='utf-8') as file:
         json.dump({}, file, ensure_ascii=False, indent=4)
+
 
 
 async def save_user_data(user_id, user_data, file_path='user_data.json'):
@@ -35,6 +39,7 @@ async def save_user_data(user_id, user_data, file_path='user_data.json'):
     except (OSError, IOError) as e:
         print(f"Ошибка при работе с файлом {file_path}: {e}")
         return False
+
 
 
 async def get_user_data(user_id, file_path='user_data.json'):
@@ -65,11 +70,10 @@ async def load_user_data_details(user_id):
         height = user_data.get("height")
         city = user_data.get("city")
         target = user_data.get("target")
-
-
         return sex, name, age, weight, height, city, target
     else:
         return user_data
+
 
 
 async def load_user_data_ccal_and_water(user_id):
@@ -89,6 +93,7 @@ async def load_user_data_ccal_and_water(user_id):
         return sex, name, age, weight, height, city, target, calculation_calorie, calculation_water_without_weather
     else:
         return user_data
+
 
 
 async def delete_user_data(user_id, file_path='user_data.json'):
@@ -116,6 +121,7 @@ async def delete_user_data(user_id, file_path='user_data.json'):
     except json.JSONDecodeError:
         print("Ошибка чтения JSON!")
         return "Файл поврежден или имеет неверный формат."
+
 
 
 async def log_water(user_id, amount):
@@ -173,6 +179,7 @@ async def log_water(user_id, amount):
     return f"Данные о воде для пользователя {user_id} успешно сохранены."
 
 
+
 async def log_food(user_id, product_name, food_weight, food_ccal_per_100g):
 
     user_data = await get_user_data(user_id)
@@ -192,10 +199,8 @@ async def log_food(user_id, product_name, food_weight, food_ccal_per_100g):
             "total_calories": 0
         }
     else:
-        # Если лог за текущую дату есть, проверяем наличие food_log
         if "food_log" not in user_data["log"][current_date]:
             user_data["log"][current_date]["food_log"] = []
-        # Также проверяем наличие total_calories
         if "total_calories" not in user_data["log"][current_date]:
             user_data["log"][current_date]["total_calories"] = 0
 
@@ -255,6 +260,7 @@ async def log_activity(user_id, activity_name, burned_calories, minutes):
 
     print(f"Данные об активности для пользователя {user_id} успешно сохранены.")
     return f"Данные об активности для пользователя {user_id} успешно сохранены."
+
 
 
 async def get_daily_progress(user_id):

@@ -11,7 +11,9 @@ from work_with_json_file import save_user_data, load_user_data_ccal_and_water, d
 from calculation_calorie_and_water_allowance import calculation_calorie_without_weather, calculation_water_without_weather
 
 
+
 router1 = Router()
+
 
 
 available_sex = ["Муж", "Жен"]
@@ -24,6 +26,7 @@ keyboard_sex = ReplyKeyboardMarkup(
     resize_keyboard=True,
     input_field_placeholder="Ху ар ю?"
 )
+
 
 
 available_target = ["Похудеть", "Сохранить вес", "Набрать вес"]
@@ -39,6 +42,7 @@ keyboard_target = ReplyKeyboardMarkup(
 )
 
 
+
 kb_yes_no = [
     [KeyboardButton(text="Да")],
     [KeyboardButton(text="Нет")]
@@ -50,6 +54,7 @@ keyboard_yes_no = ReplyKeyboardMarkup(
 )
 
 
+
 kb_yes_no_delete = [
     [KeyboardButton(text="Да")],
     [KeyboardButton(text="Нет")]
@@ -59,6 +64,7 @@ keyboard_yes_no_delete = ReplyKeyboardMarkup(
     resize_keyboard=True,
     input_field_placeholder="Если нажмете да - будут удалены все данные о вас"
 )
+
 
 
 def check_string(text):
@@ -79,6 +85,7 @@ async def cmd_help(message: Message):
     )
 
 
+
 @router1.message(Command("profile"))
 async def cmd_set_profile(message: Message, state: FSMContext):
     user_id = str(message.from_user.id)
@@ -96,12 +103,14 @@ async def cmd_set_profile(message: Message, state: FSMContext):
         await state.set_state(Profile.name)
 
 
+
 @router1.message(Profile.name)
 async def process_name(message: Message, state: FSMContext):
     selected_name = message.text
     await state.update_data(name=selected_name)
     await message.answer("Выберете ваш пол", reply_markup=keyboard_sex)
     await state.set_state(Profile.sex)
+
 
 
 @router1.message(Profile.sex, F.text.in_(available_sex))
@@ -112,13 +121,16 @@ async def process_sex_selection(message: Message, state: FSMContext):
     await state.set_state(Profile.age)
 
 
+
 @router1.message(Profile.sex)
 async def handle_invalid_sex(message: Message, state: FSMContext):
     await message.reply("Пожалуйста, выберите пол из доступных вариантов: Муж или Жен", reply_markup=keyboard_sex)
 
 
+
 async def process_invalid_value(message: Message, prompt: str):
     await message.reply(prompt)
+
 
 
 @router1.message(Profile.age, F.text.isdigit())
@@ -139,9 +151,11 @@ async def process_age(message: Message, state: FSMContext):
         await state.set_state(Profile.weight)
 
 
+
 @router1.message(Profile.age)
 async def process_invalid_age(message: Message):
     await message.reply("Пожалуйста, введите корректный возраст в виде числа в диапазоне [18, 100]")
+
 
 
 @router1.message(Profile.weight, F.text.regexp(r'^\d+(\.\d+)?$'))
@@ -160,9 +174,11 @@ async def process_weight(message: Message, state: FSMContext):
         await state.set_state(Profile.height)
 
 
+
 @router1.message(Profile.weight)
 async def process_invalid_weight(message: Message, state: FSMContext):
     await message.reply("Пожалуйста, введите корректный вес в килограммах в виде числа в диапазоне [30, 200]")
+
 
 
 @router1.message(Profile.height, F.text.regexp(r'^\d+(\.\d+)?$'))
@@ -181,9 +197,11 @@ async def process_height(message: Message, state: FSMContext):
         await state.set_state(Profile.city)
 
 
+
 @router1.message(Profile.height)
 async def process_invalid_height(message: Message, state: FSMContext):
     await message.reply("Пожалуйста, введите корректный рост в сантиметрах в виде числа в диапазоне [55, 251]")
+
 
 
 @router1.message(Profile.city)
@@ -204,16 +222,19 @@ async def process_city(message: Message, state: FSMContext):
         await message.answer("Введите название города без спец символов и цифр")
 
 
+
 async def handle_invalid_city(message: Message, error_msg=None):
     if error_msg:
         await message.reply(f"Ошибка: {error_msg}")
     await message.reply("Пожалуйста, введите корректное название города без спец символов и цифр.")
 
 
+
 @router1.message(Profile.confirm_target, F.text == "Да")
 async def change_target(message: Message, state: FSMContext):
     await message.answer("Пожалуйста, выберите вашу цель:", reply_markup=keyboard_target)
     await state.set_state(Profile.target)
+
 
 
 async def save_user_and_notify(message: Message, state: FSMContext):
@@ -240,6 +261,7 @@ async def save_user_and_notify(message: Message, state: FSMContext):
     await message.answer("Ваши данные сохранены!")
 
 
+
 @router1.message(Profile.confirm_target, F.text == "Нет")
 async def keep_target(message: Message, state: FSMContext):
     await state.update_data(target="Похудеть")
@@ -247,6 +269,7 @@ async def keep_target(message: Message, state: FSMContext):
     await save_user_and_notify(message, state)
     await state.clear()
     await message.reply("Введите /help для вызова всех команд")
+
 
 
 @router1.message(Profile.target, F.text.in_(available_target))
@@ -259,15 +282,18 @@ async def process_target(message: Message, state: FSMContext):
     await message.reply("Введите /help для вызова всех команд")
 
 
+
 @router1.message(Profile.target)
 async def invalid_target(message: Message, state: FSMContext):
     await message.reply("Пожалуйста, выберите цель из предложенных вариантов:", reply_markup=keyboard_target)
+
 
 
 @router1.message(Command("delete_profile"))
 async def cmd_confirm_delete_profile(message: Message, state: FSMContext):
     await message.reply("Вы уверены, что хотите удалить ваш профиль? Нажмите 'Да' или 'Нет'", reply_markup=keyboard_yes_no_delete)
     await state.set_state(Profile.confirm_delete)
+
 
 
 @router1.message(Profile.confirm_delete)
@@ -284,6 +310,7 @@ async def process_delete_profile(message: Message, state: FSMContext):
         await message.reply("Введите /help для вызова всех команд")
     else:
         await message.answer("Пожалуйста, нажмите 'Да' или 'Нет'", reply_markup=keyboard_yes_no_delete)
+
 
 
 @router1.message()

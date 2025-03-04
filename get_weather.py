@@ -8,9 +8,6 @@ load_dotenv()
 api_weather_key = os.getenv('API_WEATHER_KEY')
 
 
-async def main():
-    pass
-
 
 async def get_temp(city_name):
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={api_weather_key}&units=metric"
@@ -34,7 +31,3 @@ async def get_temp(city_name):
         return f"Ошибка таймаута: {timeout_err}"
     except aiohttp.ClientError as req_err:
         return f"Ошибка запроса: {req_err}"
-
-
-asyncio.run(main())
-
