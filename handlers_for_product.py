@@ -1,14 +1,15 @@
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 from datetime import datetime
 import pytz
+import matplotlib.pyplot as plt
 
 
 
 from states import LogWaterStates, LogFoodStates, LogActivityStates
-from work_with_json_file import log_water, log_food, log_activity
+from work_with_json_file import log_water, log_food, log_activity, get_daily_progress
 from get_ccal_for_product import get_food_info
 from ccal_for_active import get_activity_value
 
@@ -193,7 +194,7 @@ async def process_invalid_input_time_activity(message: Message):
 
 async def save_activity_log(message: Message, state: FSMContext):
     data = await state.get_data()
-    activity_name = data.get("activity_name")
+    activity_name = data.get("name_activity")
     calories_per_hour = data.get("ccal_in_hour_for_activity")
     minutes = data.get("time_activity")
 
@@ -204,14 +205,11 @@ async def save_activity_log(message: Message, state: FSMContext):
     current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     user_id = str(message.from_user.id)
-
     await log_activity(user_id, activity_name, burned_calories, minutes)
 
-
     amount_water_increased = minutes / 30 * 200
-
     await message.reply(
-        f"Вы занимались {activity_name} {minutes} минут и сожгли {burned_calories} калорий\n"
+        f"Вы занимались {activity_name} {minutes} минут и сожгли {burned_calories} калорий"
         f"в {current_datetime_str} по Москве. Событие записано\n"
         f"Количество необходимой воды увеличено на {amount_water_increased} мл\nПожалуйста выпейте {amount_water_increased} мл"
     )
@@ -219,3 +217,78 @@ async def save_activity_log(message: Message, state: FSMContext):
 
 
 
+async def create_calories_bar_chart(progress_data, message):
+    total_burned_calories = progress_data["total_burned_calories"]
+    calculation_calorie = progress_data["calculation_calorie"]
+    total_calories = progress_data["total_calories"]
+    total_size = total_burned_calories + calculation_calorie
+
+    plt.figure(figsize=(10, 2))
+
+    plt.barh(y=[0], width=total_calories, color='green', label="Съедено калорий", align='center')
+    plt.barh(y=[0], width=total_size, color='lightgray', label="Всего нужно съесть (калорий) с учетом активностей", align='center', alpha=0.5)
+
+    plt.xlabel("Калории")
+    plt.yticks([])
+    plt.title("Прогресс по калориям")
+    plt.legend(loc="upper right")
+
+    chart_path = "calories_chart.png"
+    plt.tight_layout()
+    plt.savefig(chart_path)
+    plt.close()
+
+    calories_chart = FSInputFile(chart_path)
+    await message.answer_photo(photo=calories_chart, caption="График прогресса по калориям")
+
+
+
+async def create_water_bar_chart(progress_data, message):
+    water_drinked = progress_data["water_drinked"]
+    remaining_water = progress_data["remaining_water"]
+    total_water = water_drinked + remaining_water
+
+    plt.figure(figsize=(10, 2))
+    plt.barh(y=[0], width=water_drinked, color='blue', label="Выпито воды (мл)", align='center')
+    plt.barh(y=[0], width=total_water, color='lightgray', label="Всего нужно выпить с учетом активностей (мл)", align='center', alpha=0.5)
+
+    plt.xlabel("Миллилитры")
+    plt.yticks([])
+    plt.title("Прогресс по воде")
+    plt.legend(loc="upper right")
+
+    chart_path = "water_bar_chart.png"
+    plt.tight_layout()
+    plt.savefig(chart_path)
+    plt.close()
+
+    water_chart = FSInputFile(chart_path)
+    await message.answer_photo(photo=water_chart, caption="График прогресса по воде")
+
+
+
+@router2.message(Command("check_progress"))
+async def cmd_check_progress(message: Message):
+    user_id = str(message.from_user.id)
+    progress_data, errorre = await get_daily_progress(user_id)
+    if errorre:
+        await message.reply(errorre)
+        return
+
+    total_burned_calories = progress_data["total_burned_calories"]
+    total_calories = progress_data["total_calories"]
+    calories_to_eat = progress_data["calories_to_eat"]
+    remaining_water = progress_data["remaining_water"]
+    water_drinked = progress_data["water_drinked"]
+
+    await message.reply(
+        f"Вы сегодня сожгли в активностях {total_burned_calories} калорий\n"
+        f"И съели еды на {total_calories} калорий\n"
+        f"Вам осталось съесть {calories_to_eat} калорий\n\n"
+        f"Воды вы выпили сегодня {water_drinked} миллилитров\n"
+        f"Нужно выпить еще {remaining_water} миллилитров\n"
+    )
+    await create_calories_bar_chart(progress_data, message)
+    await create_water_bar_chart(progress_data, message)
+
+    await message.answer("Введите /help для вызова всех команд")

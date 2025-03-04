@@ -221,7 +221,7 @@ async def log_activity(user_id, activity_name, burned_calories, minutes):
     print("Полученные данные пользователя:", user_data)
 
     if not isinstance(user_data, dict):
-        return user_data
+        return None, user_data
 
     current_date = datetime.now().strftime("%Y-%m-%d")
     current_time = datetime.now().strftime("%H:%M")
@@ -255,3 +255,38 @@ async def log_activity(user_id, activity_name, burned_calories, minutes):
 
     print(f"Данные об активности для пользователя {user_id} успешно сохранены.")
     return f"Данные об активности для пользователя {user_id} успешно сохранены."
+
+
+async def get_daily_progress(user_id):
+    user_data = await get_user_data(user_id)
+    print("Полученные данные пользователя:", user_data)
+
+    if not isinstance(user_data, dict):
+        return user_data
+
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
+    daily_log = user_data.get("log", {}).get(current_date, {})
+    if not daily_log:
+        return None, "Данные за текущий день отсутствуют."
+
+    total_burned_calories = daily_log.get("total_burned_calories", 0)
+    total_calories = daily_log.get("total_calories", 0)
+    calculation_calorie = user_data.get("calculation_calorie", 0)
+    calculation_calorie = round(calculation_calorie, 1)
+    required_water = daily_log.get("required_water", 0)
+    remaining_water = daily_log.get("remaining_water", 0)
+
+    calories_to_eat = calculation_calorie + total_burned_calories - total_calories
+    water_drinked = required_water - remaining_water
+
+    progress_data = {
+        "total_burned_calories": total_burned_calories,
+        "total_calories": total_calories,
+        "calories_to_eat": calories_to_eat,
+        "remaining_water": remaining_water,
+        "water_drinked": water_drinked,
+        "calculation_calorie": calculation_calorie
+    }
+
+    return progress_data, None

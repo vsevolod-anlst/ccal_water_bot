@@ -74,6 +74,7 @@ async def cmd_help(message: Message):
         "/log_water - Записать количество выпитой воды\n"
         "/log_food - Записать съеденную еду\n"
         "/log_activity - Записать активность\n"
+        "/check_progress - Узнать текущий прогресс за день\n"
         "/delete_profile - Удалить ваш профиль"
     )
 
@@ -86,6 +87,7 @@ async def cmd_set_profile(message: Message, state: FSMContext):
 
     if isinstance(result, tuple):
         sex, name, age, weight, height, city, target, calculation_calorie, calculation_water_without_weather = await load_user_data_ccal_and_water(user_id)
+        calculation_calorie = round(calculation_calorie, 1)
         user_data_str = (f"Пол: {sex}\nИмя: {name}\nВозраст: {age}\nВес: {weight}\n"
                          f"Рост: {height}\nГород: {city}\nЦель: {target}\nНеобходимое количество калорий на день: {calculation_calorie}\nНеобходимое количество воды при условии нормальной (<25°C) температуры: {calculation_water_without_weather}")
         await message.answer(f"Заходи не бойся, уходи не плачь, {name}\nВаши сохраненные данные:\n\n{user_data_str}")
