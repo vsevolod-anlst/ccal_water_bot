@@ -211,5 +211,47 @@ async def log_food(user_id, product_name, food_weight, food_ccal_per_100g):
     user_data["log"][current_date]["total_calories"] += calories
 
     await save_user_data(user_id, user_data)
-    print(f"Данные о воде для пользователя {user_id} успешно сохранены.")
-    return f"Данные о воде для пользователя {user_id} успешно сохранены."
+    print(f"Данные о поедании пищи для пользователя {user_id} успешно сохранены.")
+    return f"Данные о поедании пищи для пользователя {user_id} успешно сохранены."
+
+
+
+async def log_activity(user_id, activity_name, burned_calories, minutes):
+    user_data = await get_user_data(user_id)
+    print("Полученные данные пользователя:", user_data)
+
+    if not isinstance(user_data, dict):
+        return user_data
+
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_time = datetime.now().strftime("%H:%M")
+
+    if "log" not in user_data:
+        user_data["log"] = {}
+
+    if current_date not in user_data["log"]:
+        user_data["log"][current_date] = {
+            "activity_log": [],
+            "total_burned_calories": 0,
+            "required_water": user_data.get("calculation_water_without_weather", 0)  # Устанавливаем из user_data
+        }
+    else:
+        if "required_water" not in user_data["log"][current_date]:
+            user_data["log"][current_date]["required_water"] = user_data.get("calculation_water_without_weather", 0)
+
+    user_data["log"][current_date]["activity_log"].append({
+        "time": current_time,
+        "name": activity_name,
+        "minutes": minutes,
+        "burned_calories": burned_calories
+    })
+
+    user_data["log"][current_date]["total_burned_calories"] += burned_calories
+
+    additional_water = (200 * minutes) / 30  # Рассчитываем добавляемую воду
+    user_data["log"][current_date]["required_water"] += additional_water
+
+    await save_user_data(user_id, user_data)
+
+    print(f"Данные об активности для пользователя {user_id} успешно сохранены.")
+    return f"Данные об активности для пользователя {user_id} успешно сохранены."

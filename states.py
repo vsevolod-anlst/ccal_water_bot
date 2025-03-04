@@ -21,3 +21,9 @@ class LogFoodStates(StatesGroup):
     name_food = State()
     food_weight = State()
     food_ccal = State()
+
+
+class LogActivityStates(StatesGroup):
+    name_activity = State()
+    ccal_in_hour_for_activity = State()
+    time_activity = State()
