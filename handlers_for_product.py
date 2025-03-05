@@ -209,7 +209,7 @@ async def save_activity_log(message: Message, state: FSMContext):
 
     amount_water_increased = minutes / 30 * 200
     await message.reply(
-        f"Вы занимались {activity_name} {minutes} минут и сожгли {burned_calories} калорий"
+        f"Вы занимались {activity_name} {minutes} минут и сожгли {burned_calories} калорий "
         f"в {current_datetime_str} по Москве. Событие записано\n"
         f"Количество необходимой воды увеличено на {amount_water_increased} мл\nПожалуйста выпейте {amount_water_increased} мл"
     )

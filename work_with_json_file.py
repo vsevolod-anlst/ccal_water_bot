@@ -244,12 +244,18 @@ async def log_activity(user_id, activity_name, burned_calories, minutes):
         if "required_water" not in user_data["log"][current_date]:
             user_data["log"][current_date]["required_water"] = user_data.get("calculation_water_without_weather", 0)
 
+    if "activity_log" not in user_data["log"][current_date]:
+        user_data["log"][current_date]["activity_log"] = []
+
     user_data["log"][current_date]["activity_log"].append({
         "time": current_time,
         "name": activity_name,
         "minutes": minutes,
         "burned_calories": burned_calories
     })
+
+    if "total_burned_calories" not in user_data["log"][current_date]:
+        user_data["log"][current_date]["total_burned_calories"] = 0
 
     user_data["log"][current_date]["total_burned_calories"] += burned_calories
 
